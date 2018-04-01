@@ -1,4 +1,4 @@
-FROM centos:7
+FROM centos:centos7
 MAINTAINER Skiychan <dev@skiy.net>
 
 RUN set -x && \
