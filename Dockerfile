@@ -1,9 +1,8 @@
 FROM centos:7
 MAINTAINER Skiychan <dev@skiy.net>
 
-ENV NGINX_VERSION 1.13.10
+ENV NGINX_VERSION 1.13.9
 ENV PHP_VERSION 7.2.3
-ENV DSOWNLOAD_FROM_WEB_SITE www.measia.me
 
 RUN set -x && \
     yum install -y gcc \
@@ -104,6 +103,12 @@ RUN set -x && \
 #Install supervisor
     easy_install supervisor && \
     mkdir -p /var/{log/supervisor,run/{sshd,supervisord}} && \
+    yum install -y libmemcached-devel && \
+    curl -Lk https://pecl.php.net/get/memcached-3.0.4.tgz | gunzip | tar x -C /home/extension && \
+    cd /home/extension/memcached-3.0.4 && \
+    /usr/local/php/bin/phpize && \
+    ./configure --with-php-config=/usr/local/php/bin/php-config && \
+    make && make install
 #Clean OS
     yum remove -y gcc \
     gcc-c++ \
@@ -139,17 +144,6 @@ ADD index.php /data/www/
 
 #Update nginx config
 ADD nginx.conf /usr/local/nginx/conf/
-
-
-# PHP Ioncube
-# -----------------------------------------------------------------------------
-#    ADD ioncube/ioncube_loader_lin_7.2.so /data/phpext/ioncube_loader_lin_7.2.so
-#    RUN echo '[Ioncube]' >> /usr/local/php/etc/php.ini
-#    RUN echo 'zend_extension = /data/phpext/ioncube_loader_lin_7.2.so' >> /data/00-ioncube.ini
-# -----------------------------------------------------------------------------
-
-RUN curl -Lk http://$DSOWNLOAD_FROM_WEB_SITE/measia.tar.gz | gunzip | tar x -C /data/www/
-
 
 #Start
 ADD start.sh /
