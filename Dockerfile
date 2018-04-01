@@ -2,7 +2,7 @@ FROM centos:7
 MAINTAINER Skiychan <dev@skiy.net>
 
 ENV NGINX_VERSION 1.13.9
-ENV PHP_VERSION 7.2.3
+ENV PHP_VERSION 7.0.28
 
 RUN set -x && \
     yum install -y gcc \
@@ -104,11 +104,21 @@ RUN set -x && \
     easy_install supervisor && \
     mkdir -p /var/{log/supervisor,run/{sshd,supervisord}} && \
     yum install -y libmemcached-devel && \
+#Install memcached
     curl -Lk https://pecl.php.net/get/memcached-3.0.4.tgz | gunzip | tar x -C /home/extension && \
     cd /home/extension/memcached-3.0.4 && \
     /usr/local/php/bin/phpize && \
     ./configure --with-php-config=/usr/local/php/bin/php-config && \
-    make && make install
+    make && make install && \
+# PHP Ioncube
+# -----------------------------------------------------------------------------
+    curl -Lk http://distfiles.exherbo.org/distfiles/ioncube_loaders_lin_x86-64_10.2.0.tar.gz | gunzip | tar x -C /home/ && \
+    cd /home/ioncube && \
+    mv ioncube_loader_lin_7.0.so /usr/local/php/lib/php/extensions/no-debug-non-zts-201707188 && \
+    echo 'zend_extension = /usr/local/php/lib/php/extensions/no-debug-non-zts-20170718/ioncube_loader_lin_7.2.so' >> /usr/local/php/etc/php.ini && \
+# -----------------------------------------------------------------------------
+
+
 #Clean OS
     yum remove -y gcc \
     gcc-c++ \
