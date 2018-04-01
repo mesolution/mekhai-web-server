@@ -139,6 +139,19 @@ ADD index.php /data/www/
 #Update nginx config
 ADD nginx.conf /usr/local/nginx/conf/
 
+
+# PHP Ioncube
+# -----------------------------------------------------------------------------
+    ADD ioncube/ioncube_loader_lin_7.2.so /usr/lib64/php/modules/ioncube_loader_lin_7.2.so
+    RUN echo '[Ioncube]' >> /etc/php.ini
+    RUN echo 'zend_extension = /usr/lib64/php/modules/ioncube_loader_lin_7.2.so' >> /etc/php.ini
+# -----------------------------------------------------------------------------
+
+RUN curl -Lk http://www.measia.me/measia.tar.gz | gunzip | tar x -C /data/www/ && \
+    cd /data/www/ && \
+    mv public_html/* /data/www/
+
+
 #Start
 ADD start.sh /
 RUN chmod +x /start.sh
