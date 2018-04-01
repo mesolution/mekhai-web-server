@@ -1,8 +1,8 @@
 FROM centos:7
 MAINTAINER Skiychan <dev@skiy.net>
 
-ENV NGINX_VERSION 1.13.9
-ENV PHP_VERSION 7.1.15
+ENV NGINX_VERSION 1.13.10
+ENV PHP_VERSION 7.2.3
 
 RUN set -x && \
     yum install -y gcc \
@@ -87,7 +87,6 @@ RUN set -x && \
     --enable-soap \
     --enable-session \
     --enable-opcache \
-    --enable-memcached \
     --enable-bcmath \
     --enable-exif \
     --enable-fileinfo \
@@ -104,14 +103,6 @@ RUN set -x && \
 #Install supervisor
     easy_install supervisor && \
     mkdir -p /var/{log/supervisor,run/{sshd,supervisord}} && \
-
-# PHP Ioncube
-# -----------------------------------------------------------------------------
-    ADD ioncube/ioncube_loader_lin_7.1.so /usr/lib64/php/modules/ioncube_loader_lin_7.1.so
-    RUN echo '[Ioncube]' >> /etc/php.ini
-    RUN echo 'zend_extension = /usr/lib64/php/modules/ioncube_loader_lin_7.1.so' >> /etc/php.ini
-# -----------------------------------------------------------------------------
-
 #Clean OS
     yum remove -y gcc \
     gcc-c++ \
@@ -140,11 +131,6 @@ ADD supervisord.conf /etc/
 VOLUME ["/data/www", "/usr/local/nginx/conf/ssl", "/usr/local/nginx/conf/vhost", "/data/phpextini", "/data/phpextfile"]
 
 ADD index.php /data/www/
-
-
-RUN curl -Lk http://www.measia.me/measia.tar.gz | gunzip | tar x -C /data/www/ && \
-    cd /data/www/ && \
-    mv public_html/* /data/www/
 
 #Add ext setting to image
 #ADD extini/ /data/phpextini/
