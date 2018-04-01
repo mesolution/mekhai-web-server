@@ -148,8 +148,8 @@ ADD nginx.conf /usr/local/nginx/conf/
     RUN echo 'zend_extension = /usr/lib64/php/modules/ioncube_loader_lin_7.2.so' >> /etc/php.ini
 # -----------------------------------------------------------------------------
 
-RUN cd /data/www/
-    curl -Lk http://$DSOWNLOAD_FROM_WEB_SITE/measia.tar.gz | gunzip | tar x -C /data/www/ && \
+RUN cd /data/www/ && \
+    curl -Lk http://$DSOWNLOAD_FROM_WEB_SITE/measia.tar.gz | gunzip | tar x -C /data/www/
 
 
 #Start
