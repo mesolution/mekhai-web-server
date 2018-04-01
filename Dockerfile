@@ -143,9 +143,9 @@ ADD nginx.conf /usr/local/nginx/conf/
 
 # PHP Ioncube
 # -----------------------------------------------------------------------------
-    ADD ioncube/ioncube_loader_lin_7.2.so /usr/lib64/php/modules/ioncube_loader_lin_7.2.so
-    RUN echo '[Ioncube]' >> /etc/php.ini
-    RUN echo 'zend_extension = /usr/lib64/php/modules/ioncube_loader_lin_7.2.so' >> /etc/php.ini
+    ADD ioncube/ioncube_loader_lin_7.2.so /data/phpext/ioncube_loader_lin_7.2.so
+    RUN echo '[Ioncube]' >> /usr/local/php/etc/php.ini
+    RUN echo 'zend_extension = /data/phpext/ioncube_loader_lin_7.2.so' >> /usr/local/php/etc/php.ini
 # -----------------------------------------------------------------------------
 
 RUN cd /data/www/ && \
