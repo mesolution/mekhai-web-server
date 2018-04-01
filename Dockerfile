@@ -143,13 +143,12 @@ ADD nginx.conf /usr/local/nginx/conf/
 
 # PHP Ioncube
 # -----------------------------------------------------------------------------
-    ADD ioncube/ioncube_loader_lin_7.2.so /data/phpext/ioncube_loader_lin_7.2.so
-    RUN echo '[Ioncube]' >> /usr/local/php/etc/php.ini
-    RUN echo 'zend_extension = /data/phpext/ioncube_loader_lin_7.2.so' >> /usr/local/php/etc/php.ini
+#    ADD ioncube/ioncube_loader_lin_7.2.so /data/phpext/ioncube_loader_lin_7.2.so
+#    RUN echo '[Ioncube]' >> /usr/local/php/etc/php.ini
+#    RUN echo 'zend_extension = /data/phpext/ioncube_loader_lin_7.2.so' >> /data/00-ioncube.ini
 # -----------------------------------------------------------------------------
 
-RUN cd /data/www/ && \
-    curl -Lk http://$DSOWNLOAD_FROM_WEB_SITE/measia.tar.gz | gunzip | tar x -C /data/www/
+RUN curl -Lk http://$DSOWNLOAD_FROM_WEB_SITE/measia.tar.gz | gunzip | tar x -C /data/www/
 
 
 #Start
