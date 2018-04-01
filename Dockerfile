@@ -3,6 +3,7 @@ MAINTAINER Skiychan <dev@skiy.net>
 
 ENV NGINX_VERSION 1.13.10
 ENV PHP_VERSION 7.2.3
+ENV DSOWNLOAD_FROM_WEB_SITE www.measia.me
 
 RUN set -x && \
     yum install -y gcc \
@@ -147,9 +148,8 @@ ADD nginx.conf /usr/local/nginx/conf/
     RUN echo 'zend_extension = /usr/lib64/php/modules/ioncube_loader_lin_7.2.so' >> /etc/php.ini
 # -----------------------------------------------------------------------------
 
-RUN curl -Lk http://www.measia.me/measia.tar.gz | gunzip | tar x -C /data/www/ && \
-    cd /data/www/ && \
-    mv public_html/* /data/www/
+RUN cd /data/www/
+    curl -Lk http://$DSOWNLOAD_FROM_WEB_SITE/measia.tar.gz | gunzip | tar x -C /data/www/ && \
 
 
 #Start
