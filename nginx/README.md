@@ -1,6 +1,6 @@
 Dockerfile
 FROM centos:centos7
-MAINTAINER Goro Hayakawa "hayao56@gmail.com"
+MAINTAINER Me Solutions "mesolustions.me@gmail.com"
 ENV container docker
 
 # install systemd
