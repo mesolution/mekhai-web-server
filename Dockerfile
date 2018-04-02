@@ -1,4 +1,4 @@
-FROM php:7.0-fpm
+FROM php:7.1-fpm
 # Install modules
 RUN apt-get update && apt-get install -y \
         libfreetype6-dev \
@@ -29,7 +29,7 @@ RUN apt-get update && apt-get install -y \
     && echo 'redis' >> /usr/src/php-available-exts \
     && docker-php-ext-install redis
 
-RUN echo "America/Los_Angeles" > /etc/timezone; dpkg-reconfigure -f noninteractive tzdata
+RUN echo "Asia/Vientiane" > /etc/timezone; dpkg-reconfigure -f noninteractive tzdata
 
 RUN php -r "copy('https://getcomposer.org/installer', '/tmp/composer-setup.php');"
 RUN php /tmp/composer-setup.php --no-ansi --install-dir=/usr/local/bin --filename=composer && \
