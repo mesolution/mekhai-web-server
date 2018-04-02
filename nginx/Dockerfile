@@ -1,66 +1,99 @@
-FROM centos:centos7
-MAINTAINER Goro Hayakawa "hayao56@gmail.com"
-ENV container docker
+FROM debian:stretch-slim
 
-# install systemd
-RUN \
-  exec >& /root/build-systemd.log ;\
-  set -eux ;\
-  yum swap -y fakesystemd systemd initscripts epel-release vim ;\
-  unlink /etc/localtime ;\
-  ln -s /usr/share/zoneinfo/Japan /etc/localtime ;\
-  localedef -f UTF-8 -i ja_JP ja_JP.UTF-8 ;\
-  rpm -ivh http://rpms.famillecollet.com/enterprise/remi-release-7.rpm ;\
-  yum clean all ;\
-  echo ;\
-  echo "export HOME=/root" > /root/.bashrc ;\
-  echo "export EDITOR=vim" >> /root/.bashrc ;\
-  echo "export LANG=ja_JP.UTF-8" >> /root/.bashrc ;\
-  echo "alias ls='ls --color'" >> /root/.bashrc ;\
-  echo "alias vi='vim -p'" >> /root/.bashrc ;\
-  echo "alias vim='vim -p'" >> /root/.bashrc ;\
-  echo ;\
-  echo "set smartindent" > /root/.vimrc ;\
-  echo "set nowrapscan" >> /root/.vimrc ;\
-  echo "set nowrap" >> /root/.vimrc ;\
-  echo "set nu" >> /root/.vimrc ;\
-  echo "colorscheme desert" >> /root/.vimrc ;\
-  echo "highlight DiffAdd    cterm=bold ctermfg=10 ctermbg=22" >> /root/.vimrc ;\
-  echo "highlight DiffDelete cterm=bold ctermfg=10 ctermbg=52" >> /root/.vimrc ;\
-  echo "highlight DiffChange cterm=bold ctermfg=10 ctermbg=17" >> /root/.vimrc ;\
-  echo "highlight DiffText   cterm=bold ctermfg=10 ctermbg=21" >> /root/.vimrc ;\
-  echo ;\
-  echo "[user]" > /root/.gitconfig ;\
-  echo "    email = root@localhost.localdomain" >> /root/.gitconfig ;\
-  echo "    name = root" >> /root/.gitconfig ;\
-  echo "[info] done."
+LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
 
-# root password settings
-RUN yum -y install passwd ;
-RUN echo 'root:root' | chpasswd ;
+ENV NGINX_VERSION 1.13.10-1~stretch
+ENV NJS_VERSION   1.13.10.0.1.15-1~stretch
 
-# install wget
-RUN yum -y install wget ;
+RUN set -x \
+	&& apt-get update \
+	&& apt-get install --no-install-recommends --no-install-suggests -y gnupg1 apt-transport-https ca-certificates \
+	&& \
+	NGINX_GPGKEY=573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62; \
+	found=''; \
+	for server in \
+		ha.pool.sks-keyservers.net \
+		hkp://keyserver.ubuntu.com:80 \
+		hkp://p80.pool.sks-keyservers.net:80 \
+		pgp.mit.edu \
+	; do \
+		echo "Fetching GPG key $NGINX_GPGKEY from $server"; \
+		apt-key adv --keyserver "$server" --keyserver-options timeout=10 --recv-keys "$NGINX_GPGKEY" && found=yes && break; \
+	done; \
+	test -z "$found" && echo >&2 "error: failed to fetch GPG key $NGINX_GPGKEY" && exit 1; \
+	apt-get remove --purge --auto-remove -y gnupg1 && rm -rf /var/lib/apt/lists/* \
+	&& dpkgArch="$(dpkg --print-architecture)" \
+	&& nginxPackages=" \
+		nginx=${NGINX_VERSION} \
+		nginx-module-xslt=${NGINX_VERSION} \
+		nginx-module-geoip=${NGINX_VERSION} \
+		nginx-module-image-filter=${NGINX_VERSION} \
+		nginx-module-njs=${NJS_VERSION} \
+	" \
+	&& case "$dpkgArch" in \
+		amd64|i386) \
+# arches officialy built by upstream
+			echo "deb https://nginx.org/packages/mainline/debian/ stretch nginx" >> /etc/apt/sources.list.d/nginx.list \
+			&& apt-get update \
+			;; \
+		*) \
+# we're on an architecture upstream doesn't officially build for
+# let's build binaries from the published source packages
+			echo "deb-src https://nginx.org/packages/mainline/debian/ stretch nginx" >> /etc/apt/sources.list.d/nginx.list \
+			\
+# new directory for storing sources and .deb files
+			&& tempDir="$(mktemp -d)" \
+			&& chmod 777 "$tempDir" \
+# (777 to ensure APT's "_apt" user can access it too)
+			\
+# save list of currently-installed packages so build dependencies can be cleanly removed later
+			&& savedAptMark="$(apt-mark showmanual)" \
+			\
+# build .deb files from upstream's source packages (which are verified by apt-get)
+			&& apt-get update \
+			&& apt-get build-dep -y $nginxPackages \
+			&& ( \
+				cd "$tempDir" \
+				&& DEB_BUILD_OPTIONS="nocheck parallel=$(nproc)" \
+					apt-get source --compile $nginxPackages \
+			) \
+# we don't remove APT lists here because they get re-downloaded and removed later
+			\
+# reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
+# (which is done after we install the built packages so we don't have to redownload any overlapping dependencies)
+			&& apt-mark showmanual | xargs apt-mark auto > /dev/null \
+			&& { [ -z "$savedAptMark" ] || apt-mark manual $savedAptMark; } \
+			\
+# create a temporary local APT repo to install from (so that dependency resolution can be handled by APT, as it should be)
+			&& ls -lAFh "$tempDir" \
+			&& ( cd "$tempDir" && dpkg-scanpackages . > Packages ) \
+			&& grep '^Package: ' "$tempDir/Packages" \
+			&& echo "deb [ trusted=yes ] file://$tempDir ./" > /etc/apt/sources.list.d/temp.list \
+# work around the following APT issue by using "Acquire::GzipIndexes=false" (overriding "/etc/apt/apt.conf.d/docker-gzip-indexes")
+#   Could not open file /var/lib/apt/lists/partial/_tmp_tmp.ODWljpQfkE_._Packages - open (13: Permission denied)
+#   ...
+#   E: Failed to fetch store:/var/lib/apt/lists/partial/_tmp_tmp.ODWljpQfkE_._Packages  Could not open file /var/lib/apt/lists/partial/_tmp_tmp.ODWljpQfkE_._Packages - open (13: Permission denied)
+			&& apt-get -o Acquire::GzipIndexes=false update \
+			;; \
+	esac \
+	\
+	&& apt-get install --no-install-recommends --no-install-suggests -y \
+						$nginxPackages \
+						gettext-base \
+	&& apt-get remove --purge --auto-remove -y apt-transport-https ca-certificates && rm -rf /var/lib/apt/lists/* /etc/apt/sources.list.d/nginx.list \
+	\
+# if we have leftovers from building, let's purge them (including extra, unnecessary build deps)
+	&& if [ -n "$tempDir" ]; then \
+		apt-get purge -y --auto-remove \
+		&& rm -rf "$tempDir" /etc/apt/sources.list.d/temp.list; \
+	fi
 
-# install gpg-key
-RUN wget https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7 ;
-RUN rpm --import RPM-GPG-KEY-EPEL-7 ;
-
-RUN wget http://nginx.org/packages/keys/nginx_signing.key ;
-RUN rpm --import nginx_signing.key ;
-RUN yum list|grep nginx ;
-
-# install nginx
-RUN echo '[nginx]' > /etc/yum.repos.d/nginx.repo ;
-RUN echo 'name=nginx repo' >> /etc/yum.repos.d/nginx.repo ;
-RUN echo 'baseurl=http://nginx.org/packages/mainline/centos/$releasever/$basearch/' >> /etc/yum.repos.d/nginx.repo ;
-RUN echo 'gpgcheck=1' >> /etc/yum.repos.d/nginx.repo ;
-RUN echo 'enabled=1' >> /etc/yum.repos.d/nginx.repo ;
-RUN yum -y --enablerepo=nginx install nginx ;
+# forward request and error logs to docker log collector
+RUN ln -sf /dev/stdout /var/log/nginx/access.log \
+	&& ln -sf /dev/stderr /var/log/nginx/error.log
 
 EXPOSE 80
-EXPOSE 443
 
-RUN systemctl enable nginx
+STOPSIGNAL SIGTERM
 
-ENTRYPOINT ["/sbin/init"]
+CMD ["nginx", "-g", "daemon off;"]
