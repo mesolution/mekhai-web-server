@@ -1,47 +1,66 @@
-FROM internavenue/centos-base:centos7
+FROM centos:centos7
+MAINTAINER Goro Hayakawa "hayao56@gmail.com"
+ENV container docker
 
-MAINTAINER Intern Avenue Dev Team <dev@internavenue.com>
+# install systemd
+RUN \
+  exec >& /root/build-systemd.log ;\
+  set -eux ;\
+  yum swap -y fakesystemd systemd initscripts epel-release vim ;\
+  unlink /etc/localtime ;\
+  ln -s /usr/share/zoneinfo/Japan /etc/localtime ;\
+  localedef -f UTF-8 -i ja_JP ja_JP.UTF-8 ;\
+  rpm -ivh http://rpms.famillecollet.com/enterprise/remi-release-7.rpm ;\
+  yum clean all ;\
+  echo ;\
+  echo "export HOME=/root" > /root/.bashrc ;\
+  echo "export EDITOR=vim" >> /root/.bashrc ;\
+  echo "export LANG=ja_JP.UTF-8" >> /root/.bashrc ;\
+  echo "alias ls='ls --color'" >> /root/.bashrc ;\
+  echo "alias vi='vim -p'" >> /root/.bashrc ;\
+  echo "alias vim='vim -p'" >> /root/.bashrc ;\
+  echo ;\
+  echo "set smartindent" > /root/.vimrc ;\
+  echo "set nowrapscan" >> /root/.vimrc ;\
+  echo "set nowrap" >> /root/.vimrc ;\
+  echo "set nu" >> /root/.vimrc ;\
+  echo "colorscheme desert" >> /root/.vimrc ;\
+  echo "highlight DiffAdd    cterm=bold ctermfg=10 ctermbg=22" >> /root/.vimrc ;\
+  echo "highlight DiffDelete cterm=bold ctermfg=10 ctermbg=52" >> /root/.vimrc ;\
+  echo "highlight DiffChange cterm=bold ctermfg=10 ctermbg=17" >> /root/.vimrc ;\
+  echo "highlight DiffText   cterm=bold ctermfg=10 ctermbg=21" >> /root/.vimrc ;\
+  echo ;\
+  echo "[user]" > /root/.gitconfig ;\
+  echo "    email = root@localhost.localdomain" >> /root/.gitconfig ;\
+  echo "    name = root" >> /root/.gitconfig ;\
+  echo "[info] done."
 
-# Install the Nginx.org CentOS repo.
-ADD etc/nginx.repo /etc/yum.repos.d/nginx.repo
+# root password settings
+RUN yum -y install passwd ;
+RUN echo 'root:root' | chpasswd ;
 
-# Install base stuff.
-RUN yum -y install \
-  nginx \
-  unzip
+# install wget
+RUN yum -y install wget ;
 
-# Clean up YUM when done.
-RUN yum clean all
+# install gpg-key
+RUN wget https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7 ;
+RUN rpm --import RPM-GPG-KEY-EPEL-7 ;
 
-RUN mkdir /srv/www
+RUN wget http://nginx.org/packages/keys/nginx_signing.key ;
+RUN rpm --import nginx_signing.key ;
+RUN yum list|grep nginx ;
 
-# Replace the stock config with a nicer one.
-RUN rm -rf /etc/nginx
+# install nginx
+RUN echo '[nginx]' > /etc/yum.repos.d/nginx.repo ;
+RUN echo 'name=nginx repo' >> /etc/yum.repos.d/nginx.repo ;
+RUN echo 'baseurl=http://nginx.org/packages/mainline/centos/$releasever/$basearch/' >> /etc/yum.repos.d/nginx.repo ;
+RUN echo 'gpgcheck=1' >> /etc/yum.repos.d/nginx.repo ;
+RUN echo 'enabled=1' >> /etc/yum.repos.d/nginx.repo ;
+RUN yum -y --enablerepo=nginx install nginx ;
 
-# Unfortunately, because of a bug in hub.docker.com,
-# we can't use Git submodules here to drop modules in.
-RUN cd /tmp && \
-  curl -L -o server-configs-nginx.zip https://github.com/h5bp/server-configs-nginx/archive/master.zip && \
-  unzip server-configs-nginx.zip && \
-  mv server-configs-nginx-master /etc/nginx
+EXPOSE 80
+EXPOSE 443
 
-RUN mkdir /etc/nginx/conf
-RUN sed -ri 's/user www www;/user nginx nginx;\n\n# Run Nginx in the foreground for Docker.\ndaemon off;/g' /etc/nginx/nginx.conf
-RUN sed -ri 's/logs\/error.log/\/var\/log\/nginx\/error.log/g' /etc/nginx/nginx.conf
-RUN sed -ri 's/logs\/access.log/\/var\/log\/nginx\/access.log/g' /etc/nginx/nginx.conf
-RUN sed -ri 's/logs\/static.log/\/var\/log\/nginx\/static.log/g' /etc/nginx/h5bp/location/expires.conf
+RUN systemctl enable nginx
 
-# Don't run Nginx as a daemon. This lets the docker host monitor the process.
-RUN ln -s /etc/nginx/sites-available/no-default /etc/nginx/sites-enabled
-
-EXPOSE 80 22
-
-ADD scripts /scripts
-RUN chmod +x /scripts/start.sh
-
-# Expose our web root and log directories log.
-VOLUME ["/vagrant", "/srv/www", "/var/log", "/var/run"]
-
-# Kicking in
-CMD ["/scripts/start.sh"]
-
+ENTRYPOINT ["/sbin/init"]
