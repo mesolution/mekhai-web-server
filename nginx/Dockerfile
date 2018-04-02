@@ -1,18 +1,47 @@
-FROM centos:centos7
-LABEL maintainer="Me Solution <mesolutions.me@gmail.com>"
+FROM internavenue/centos-base:centos7
 
-ENV nginxversion="1.13.10" \
-    os="centos" \
-    osversion="7" \
-    elversion="7_4"
+MAINTAINER Intern Avenue Dev Team <dev@internavenue.com>
 
-RUN yum install -y wget openssl sed &&\
-    yum -y autoremove &&\
-    yum clean all &&\
-    wget http://nginx.org/packages/$os/$osversion/x86_64/RPMS/nginx-$nginxversion.el$elversion.ngx.x86_64.rpm &&\
-    rpm -iv nginx-$nginxversion.el$elversion.ngx.x86_64.rpm &&\
-    sed -i '1i\
-    daemon off;\
-    ' /etc/nginx/nginx.conf
+# Install the Nginx.org CentOS repo.
+ADD etc/nginx.repo /etc/yum.repos.d/nginx.repo
 
-CMD ["nginx"]
+# Install base stuff.
+RUN yum -y install \
+  nginx \
+  unzip
+
+# Clean up YUM when done.
+RUN yum clean all
+
+RUN mkdir /srv/www
+
+# Replace the stock config with a nicer one.
+RUN rm -rf /etc/nginx
+
+# Unfortunately, because of a bug in hub.docker.com,
+# we can't use Git submodules here to drop modules in.
+RUN cd /tmp && \
+  curl -L -o server-configs-nginx.zip https://github.com/h5bp/server-configs-nginx/archive/master.zip && \
+  unzip server-configs-nginx.zip && \
+  mv server-configs-nginx-master /etc/nginx
+
+RUN mkdir /etc/nginx/conf
+RUN sed -ri 's/user www www;/user nginx nginx;\n\n# Run Nginx in the foreground for Docker.\ndaemon off;/g' /etc/nginx/nginx.conf
+RUN sed -ri 's/logs\/error.log/\/var\/log\/nginx\/error.log/g' /etc/nginx/nginx.conf
+RUN sed -ri 's/logs\/access.log/\/var\/log\/nginx\/access.log/g' /etc/nginx/nginx.conf
+RUN sed -ri 's/logs\/static.log/\/var\/log\/nginx\/static.log/g' /etc/nginx/h5bp/location/expires.conf
+
+# Don't run Nginx as a daemon. This lets the docker host monitor the process.
+RUN ln -s /etc/nginx/sites-available/no-default /etc/nginx/sites-enabled
+
+EXPOSE 80 22
+
+ADD scripts /scripts
+RUN chmod +x /scripts/start.sh
+
+# Expose our web root and log directories log.
+VOLUME ["/vagrant", "/srv/www", "/var/log", "/var/run"]
+
+# Kicking in
+CMD ["/scripts/start.sh"]
+
