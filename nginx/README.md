@@ -1,83 +1,67 @@
-# docker-centos-nginx
+Dockerfile
+FROM centos:centos7
+MAINTAINER Goro Hayakawa "hayao56@gmail.com"
+ENV container docker
 
-A Dockerfile that produces a CentOS-based Docker image that will run the latest stable [Nginx][nginx].
+# install systemd
+RUN \
+  exec >& /root/build-systemd.log ;\
+  set -eux ;\
+  yum swap -y fakesystemd systemd initscripts epel-release vim ;\
+  unlink /etc/localtime ;\
+  ln -s /usr/share/zoneinfo/Japan /etc/localtime ;\
+  localedef -f UTF-8 -i ja_JP ja_JP.UTF-8 ;\
+  rpm -ivh http://rpms.famillecollet.com/enterprise/remi-release-7.rpm ;\
+  yum clean all ;\
+  echo ;\
+  echo "export HOME=/root" > /root/.bashrc ;\
+  echo "export EDITOR=vim" >> /root/.bashrc ;\
+  echo "export LANG=ja_JP.UTF-8" >> /root/.bashrc ;\
+  echo "alias ls='ls --color'" >> /root/.bashrc ;\
+  echo "alias vi='vim -p'" >> /root/.bashrc ;\
+  echo "alias vim='vim -p'" >> /root/.bashrc ;\
+  echo ;\
+  echo "set smartindent" > /root/.vimrc ;\
+  echo "set nowrapscan" >> /root/.vimrc ;\
+  echo "set nowrap" >> /root/.vimrc ;\
+  echo "set nu" >> /root/.vimrc ;\
+  echo "colorscheme desert" >> /root/.vimrc ;\
+  echo "highlight DiffAdd    cterm=bold ctermfg=10 ctermbg=22" >> /root/.vimrc ;\
+  echo "highlight DiffDelete cterm=bold ctermfg=10 ctermbg=52" >> /root/.vimrc ;\
+  echo "highlight DiffChange cterm=bold ctermfg=10 ctermbg=17" >> /root/.vimrc ;\
+  echo "highlight DiffText   cterm=bold ctermfg=10 ctermbg=21" >> /root/.vimrc ;\
+  echo ;\
+  echo "[user]" > /root/.gitconfig ;\
+  echo "    email = root@localhost.localdomain" >> /root/.gitconfig ;\
+  echo "    name = root" >> /root/.gitconfig ;\
+  echo "[info] done."
 
-It is ideal to be a base image to serve out [PHP-FPM][phpfpm] or as a [Puppet Master][puppet] load balancer.
+# root password settings
+RUN yum -y install passwd ;
+RUN echo 'root:root' | chpasswd ;
 
-The build is based on [internavenue/docker-centos-base][docker-centos-base].
+# install wget
+RUN yum -y install wget ;
 
-[nginx]: http://nginx.org/
-[phpfpm]: http://php-fpm.org/
-[puppet]: http://puppetlabs.com/puppet
+# install gpg-key
+RUN wget https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7 ;
+RUN rpm --import RPM-GPG-KEY-EPEL-7 ;
 
-## Included packages (and their dependencies)
+RUN wget http://nginx.org/packages/keys/nginx_signing.key ;
+RUN rpm --import nginx_signing.key ;
+RUN yum list|grep nginx ;
 
-* Nginx
-* [H5BP Nginx boilerplate][h5bp]
+# install nginx
+RUN echo '[nginx]' > /etc/yum.repos.d/nginx.repo ;
+RUN echo 'name=nginx repo' >> /etc/yum.repos.d/nginx.repo ;
+RUN echo 'baseurl=http://nginx.org/packages/mainline/centos/$releasever/$basearch/' >> /etc/yum.repos.d/nginx.repo ;
+RUN echo 'gpgcheck=1' >> /etc/yum.repos.d/nginx.repo ;
+RUN echo 'enabled=1' >> /etc/yum.repos.d/nginx.repo ;
+RUN yum -y --enablerepo=nginx install nginx ;
 
-[h5bp]: https://github.com/h5bp/server-configs-nginx
+EXPOSE 80
+EXPOSE 443
 
-## Image Creation
+RUN systemctl enable nginx
 
-This example creates the image with the tag `internavenue/centos-nginx`, but you can
-change this to use your own username.
-
-
-```
-$ docker build -t="internavenue/centos-nginx" .
-```
-
-Alternately, you can run the following if you have *GNU Make* installed...
-
-```
-$ make
-```
-
-You can also specify a custom docker username like so:
-
-```
-$ make DOCKER_USER=internavenue
-```
-
-## Container Creation / Running
-
-The Nginx web server is configured to store web root in `/srv/www` inside the container.
-You can map the container's `/srv/www` volume to a volume on the host so the data
-becomes independant of the running container.
-
-This example uses `/srv/docker/lon-dev-web` to host the web application, but you can modify
-this to your needs.
-
-When the container runs, it creates a superuser with a random password.  You
-can set the username and password for the superuser by setting the container's
-environment variables.  This lets you discover the username and password of the
-superuser from within a linked container or from the output of `docker inspect
-web1`.
-
-``` shell
-$ mkdir -p /srv/docker/lon-dev-web
-$ docker run -d -name="web1" \
-             -p 127.0.0.1:80:80 \
-             -v /srv/docker/lon-dev-web:/srv/www \
-             -e USER="super" \
-             -e PASS="Whatz03v3r" \
-             internavenue/nginx
-```
-
-Alternately, you can run the following if you have *GNU Make* installed...
-
-``` shell
-$ make run
-```
-
-You can also specify a custom port to bind to on the host, a custom web root
-directory, and the superuser username and password on the host like so:
-
-``` shell
-$ sudo mkdir -p /srv/docker/lon-dev-web
-$ make run PORT=127.0.0.1:8080 \
-           DATA_DIR=/my/spec/data/dir \
-           USER=super \
-           PASS=Whatz03v3r
-```
-
+ENTRYPOINT ["/sbin/init"]
