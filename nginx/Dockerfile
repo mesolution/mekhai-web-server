@@ -5,8 +5,8 @@ RUN yum update -y && \
 
 RUN yum install -y nginx
 
-COPY ./.docker/nginx/nginx.conf /etc/nginx/nginx.conf
-COPY ./.docker/nginx/app.conf /etc/nginx/conf.d/app.conf
+COPY ./nginx/nginx.conf /etc/nginx/nginx.conf
+COPY ./nginx/app.conf /etc/nginx/conf.d/app.conf
 
 RUN yum clean all
 
