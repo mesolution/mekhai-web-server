@@ -43,6 +43,14 @@ COPY ./configs/apache2.conf ${APACHE_CONF_DIR}/apache2.conf
 COPY ./configs/app.conf ${APACHE_CONF_DIR}/sites-enabled/app.conf
 COPY ./configs/php.ini  ${PHP_CONF_DIR}/apache2/conf.d/custom.ini
 
+RUN cd /tmp \
+	&& curl -o ioncube.tar.gz http://downloads3.ioncube.com/loader_downloads/ioncube_loaders_lin_x86-64.tar.gz \
+    && tar -xvvzf ioncube.tar.gz \
+    && mv ioncube/ioncube_loader_lin_7.1.so /usr/local/lib/php/extensions/* \
+    && rm -Rf ioncube.tar.gz ioncube \
+    && echo "zend_extension=/usr/lib/php/20160303/ioncube_loader_lin_7.1.so" > /etc/php/7.1/apache2/conf.d00_docker-php-ext-ioncube_loader_lin_7.1.ini
+
+
 WORKDIR /var/www/app/
 
 EXPOSE 80 443
