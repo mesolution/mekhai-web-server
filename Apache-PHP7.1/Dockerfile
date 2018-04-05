@@ -20,7 +20,7 @@ RUN	\
 	&& add-apt-repository -y ppa:ondrej/php \
 	&& add-apt-repository -y ppa:ondrej/apache2 \
 	&& apt-get update \
-    && apt-get install -y wget nodejs npm git nano vim curl apache2 libapache2-mod-php7.1 libmemcached-dev php-memcached php7.1-cli php7.1-readline php7.1-mbstring php7.1-zip php7.1-intl php7.1-xml php7.1-json php7.1-curl php7.1-mcrypt php7.1-gd php7.1-pgsql php7.1-mysql php-pear \
+    && apt-get install -y wget nodejs npm git nano vim curl apache2 libapache2-mod-php7.1 libmemcached-dev php-memcached php-redis php7.1-cli php7.1-readline php7.1-mbstring php7.1-zip php7.1-intl php7.1-xml php7.1-json php7.1-curl php7.1-mcrypt php7.1-gd php7.1-pgsql php7.1-mysql php-pear \
     # Apache settings
     && cp /dev/null ${APACHE_CONF_DIR}/conf-available/other-vhosts-access-log.conf \
     && rm ${APACHE_CONF_DIR}/sites-enabled/000-default.conf ${APACHE_CONF_DIR}/sites-available/000-default.conf \
@@ -49,15 +49,6 @@ RUN cd /tmp \
     && cp -rf ioncube/ioncube_loader_lin_7.1.so /usr/lib/php/20160303/ \
     && rm -Rf ioncube.tar.gz ioncube \
     && echo "zend_extension=ioncube_loader_lin_7.1.so" > /etc/php/7.1/apache2/conf.d/00-ioncube_loader_lin_7.1.ini
-    
-RUN cd /tmp \
-    && git clone https://github.com/phpredis/phpredis.git \
-    && cd phpredis \
-    && ./configure \
-    && make && make install \
-    && cd .. \
-    && rm -rf phpredis \
-    && echo "extension=redis.so" > /etc/php/7.1/apache2/conf.d/00-redis.ini
 
 WORKDIR /var/www/app/
 
