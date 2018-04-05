@@ -53,7 +53,6 @@ RUN cd /tmp \
 RUN cd /tmp \
     && git clone https://github.com/phpredis/phpredis.git \
     && cd phpredis \
-    && git checkout php7 \
     && phpize \
     && ./configure \
     && make && make install \
