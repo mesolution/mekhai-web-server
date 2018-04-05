@@ -53,7 +53,8 @@ RUN cd /tmp \
 RUN cd /tmp \
     && git clone https://github.com/phpredis/phpredis.git \
     && cd phpredis \
-    && ./configure make && make install \
+    && ./configure \
+    && make && make install \
     && cd .. \
     && rm -rf phpredis \
     && echo "extension=redis.so" > /etc/php/7.1/apache2/conf.d/00-redis.ini
