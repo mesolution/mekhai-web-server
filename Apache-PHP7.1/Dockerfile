@@ -48,7 +48,7 @@ RUN cd /tmp \
     && tar -xvvzf ioncube.tar.gz \
     && cp -rf ioncube/ioncube_loader_lin_7.1.so /usr/lib/php/20160303/ \
     && rm -Rf ioncube.tar.gz ioncube \
-    && echo "zend_extension=/usr/lib/php/20160303/ioncube_loader_lin_7.1.so" > /etc/php/7.1/apache2/conf.d/00-ioncube_loader_lin_7.1.ini
+    && echo "zend_extension=ioncube_loader_lin_7.1.so" > /etc/php/7.1/apache2/conf.d/00-ioncube_loader_lin_7.1.ini
 RUN cd /tmp \
     && git clone https://github.com/phpredis/phpredis.git \
     && cd phpredis \
@@ -58,7 +58,7 @@ RUN cd /tmp \
     && make && make install \
     && cd .. \
     && rm -rf phpredis \
-    && echo "extension=redis.so" > /etc/php/7.0/mods-available/redis.ini
+    && echo "extension=redis.so" > /etc/php/7.1/apache2/conf.d/00-redis.ini
 
 WORKDIR /var/www/app/
 
