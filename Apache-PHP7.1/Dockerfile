@@ -50,13 +50,6 @@ RUN cd /tmp \
     && rm -Rf ioncube.tar.gz ioncube \
     && echo "zend_extension=ioncube_loader_lin_7.1.so" > /etc/php/7.1/apache2/conf.d/00-ioncube_loader_lin_7.1.ini
 
-Run cd /tmp \ 
-    && wget http://www.imagemagick.org/download/ImageMagick-6.8.7-7.tar.gz \
-    && tar xzvf ImageMagick-6.8.9-1.tar.gz \
-    && cd ImageMagick-6.8.9-1/ \
-    && ./configure --prefix=/opt/imagemagick-6.8 && make \
-    && checkinstall
-
 WORKDIR /var/www/app/
 
 EXPOSE 80 443
