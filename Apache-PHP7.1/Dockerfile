@@ -20,7 +20,7 @@ RUN	\
 	&& add-apt-repository -y ppa:ondrej/php \
 	&& add-apt-repository -y ppa:ondrej/apache2 \
 	&& apt-get update \
-    && apt-get install -y wget nodejs npm git nano vim curl apache2 libapache2-mod-php7.1 libmemcached-dev php-memcached php-redis php7.1-cli php7.1-readline php7.1-mbstring php7.1-zip php7.1-intl php7.1-xml php7.1-json php7.1-curl php7.1-mcrypt php7.1-gd php7.1-pgsql php7.1-mysql php-pear \
+    && apt-get install -y wget nodejs npm git nano vim curl imagemagick apache2 libapache2-mod-php7.1 libmemcached-dev php-memcached php-redis php7.1-cli php7.1-readline php7.1-mbstring php7.1-zip php7.1-intl php7.1-xml php7.1-json php7.1-curl php7.1-mcrypt php7.1-gd php7.1-pgsql php7.1-mysql php-pear php-bcmath php7.1-soap php7.1-intl \
     # Apache settings
     && cp /dev/null ${APACHE_CONF_DIR}/conf-available/other-vhosts-access-log.conf \
     && rm ${APACHE_CONF_DIR}/sites-enabled/000-default.conf ${APACHE_CONF_DIR}/sites-available/000-default.conf \
@@ -49,6 +49,13 @@ RUN cd /tmp \
     && cp -rf ioncube/ioncube_loader_lin_7.1.so /usr/lib/php/20160303/ \
     && rm -Rf ioncube.tar.gz ioncube \
     && echo "zend_extension=ioncube_loader_lin_7.1.so" > /etc/php/7.1/apache2/conf.d/00-ioncube_loader_lin_7.1.ini
+
+Run cd /tmp \ 
+    && wget http://www.imagemagick.org/download/ImageMagick-6.8.7-7.tar.gz \
+    && tar xzvf ImageMagick-6.8.9-1.tar.gz \
+    && cd ImageMagick-6.8.9-1/ \
+    && ./configure --prefix=/opt/imagemagick-6.8 && make \
+    && checkinstall
 
 WORKDIR /var/www/app/
 
