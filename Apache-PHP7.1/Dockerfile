@@ -41,15 +41,7 @@ RUN	\
 
 COPY ./configs/apache2.conf ${APACHE_CONF_DIR}/apache2.conf
 COPY ./configs/app.conf ${APACHE_CONF_DIR}/sites-enabled/app.conf
-COPY ./configs/001-default-ssl.conf ${APACHE_CONF_DIR}/sites-enabled/001-default-ssl.conf
 COPY ./configs/php.ini  ${PHP_CONF_DIR}/apache2/conf.d/custom.ini
-
-RUN sed -i 's/^ServerSignature/#ServerSignature/g' /etc/apache2/conf-enabled/security.conf \
-    && sed -i 's/^ServerTokens/#ServerTokens/g' /etc/apache2/conf-enabled/security.conf \
-    && echo "ServerSignature Off" >> /etc/apache2/conf-enabled/security.conf \
-    && echo "ServerTokens Prod" >> /etc/apache2/conf-enabled/security.conf \
-    && a2enmod ssl \
-    && a2enmod headers
 
 RUN cd /tmp \
     && curl -o ioncube.tar.gz http://downloads3.ioncube.com/loader_downloads/ioncube_loaders_lin_x86-64.tar.gz \
