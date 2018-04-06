@@ -44,6 +44,7 @@ COPY ./configs/app.conf ${APACHE_CONF_DIR}/sites-enabled/app.conf
 COPY ./configs/001-default-ssl.conf ${APACHE_CONF_DIR}/sites-enabled/001-default-ssl.conf
 COPY ./configs/php.ini  ${PHP_CONF_DIR}/apache2/conf.d/custom.ini
 
+RUN openssl req -x509 -newkey rsa:4086 -keyout key.pem -out cert.pem -days 3650 -nodes -sha256
 
 RUN sed -i 's/^ServerSignature/#ServerSignature/g' /etc/apache2/conf-enabled/security.conf \
     && sed -i 's/^ServerTokens/#ServerTokens/g' /etc/apache2/conf-enabled/security.conf \
