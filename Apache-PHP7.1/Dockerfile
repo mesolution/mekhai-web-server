@@ -50,6 +50,11 @@ RUN cd /tmp \
     && rm -Rf ioncube.tar.gz ioncube \
     && echo "zend_extension=ioncube_loader_lin_7.1.so" > /etc/php/7.1/apache2/conf.d/00-ioncube_loader_lin_7.1.ini
 
+RUN git clone https://github.com/letsencrypt/letsencrypt
+RUN /data/letsencrypt/letsencrypt-auto --help
+
+RUN apache2ctl -D BACKGROUND
+
 WORKDIR /var/www/app/
 
 EXPOSE 80 443
