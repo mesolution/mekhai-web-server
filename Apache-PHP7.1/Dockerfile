@@ -21,7 +21,7 @@ RUN	\
 	&& add-apt-repository -y ppa:ondrej/apache2 \
 	&& add-apt-repository -y ppa:certbot/certbot \
 	&& apt-get update \
-    && apt-get install -y python-certbot-apache openssl wget unzip nodejs npm git nano vim curl imagemagick apache2 libapache2-mod-php7.1 libmemcached-dev php-memcached php-redis php7.1-cli php7.1-readline php7.1-mbstring php7.1-zip php7.1-intl php7.1-xml php7.1-json php7.1-curl php7.1-mcrypt php7.1-gd php7.1-pgsql php7.1-mysql php-pear php-bcmath php7.1-soap php7.1-intl php7.1-xdebug \
+    && apt-get install -y python-certbot-apache openssl wget unzip nodejs npm git nano vim curl imagemagick apache2 libapache2-mod-php7.1 libmemcached-dev php-memcached php-redis php7.1-cli php7.1-readline php7.1-mbstring php7.1-zip php7.1-intl php7.1-xml php7.1-json php7.1-curl php7.1-mcrypt php7.1-gd php7.1-pgsql php7.1-mysql php-pear php7.1-soap php7.1-intl php7.1-xdebug \
     && apt update \
     && apt install php7.1-bcmath \
     # Apache settings
