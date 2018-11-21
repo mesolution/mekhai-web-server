@@ -59,3 +59,4 @@ EXPOSE 80 443
 
 # By default, simply start apache.
 CMD ["/sbin/entrypoint.sh"]
+
